@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+from utils import *
 
 
 def test():
@@ -62,7 +63,30 @@ def generate_chess_board(cell_size: int, rows: int, cols: int, pad: int = 30) ->
     return board_image
 
 
-if __name__ == "__main__":
-    # test()
+def main():
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description="Argument Parser Example")
 
-    chessboard_image = generate_chess_board(cell_size=100, rows=15, cols=10)
+    # Add arguments
+    parser.add_argument("-c", "--columns", type=validate_positive, default=16, help="Number of Columns positive ")
+    parser.add_argument("-r", "--rows", type=validate_positive, default=12, help="Number of Rows ")
+    parser.add_argument("-cs", "--cell_size", type=validate_non_negative, default=40, help="Square cell size")
+    parser.add_argument("-p", "--padding", type=validate_positive, required=False, default=50, help="A boolean input")
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    # Perform actions based on the input arguments
+    print(f"Creating Board {args.rows}x{args.columns}, Square size {args.cell_size}. and padding {args.padding}")
+    return args
+
+
+if __name__ == "__main__":
+
+    # Call the main function with the parsed arguments
+    args = main()
+
+    chessboard_image = generate_chess_board(cell_size=args.cell_size, rows=args.rows, cols=args.columns)
+
+    cv.imshow("Board",chessboard_image)
+    cv.waitKey(0)
