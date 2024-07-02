@@ -3,11 +3,24 @@ import cv2 as cv
 from utils import *
 import time
 from termcolor import colored
+from dataclasses import dataclass
+
 
 # import albumentations as A
 
 
+@dataclass
+class BoardConfig:
+    board_type: str
+    tag_type: str
+    columns: int
+    rows: int
+    cell_size: int
+    padding: int
+
 # tags_families_names = {d: getattr(cv.aruco, d) for d in dir(cv.aruco) if d.startswith("DICT")}
+
+
 TAGS_FAMILIES = {d: getattr(cv.aruco, d) for d in dir(cv.aruco) if d.startswith("DICT")}
 
 
@@ -15,6 +28,15 @@ def parse_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Chessboard Generator:")
 
     # Add arguments
+    parser.add_argument("--board_type",
+                        type=str,
+                        default="Chess",
+                        help="Board Type, choose from Chess, Aruco  ")
+    parser.add_argument("--tag_type",
+                        type=str,
+                        default="",
+                        required=False,
+                        help="tag Type, choose from ....TODO  ")
     parser.add_argument("-c", "--columns",
                         type=arg_positive_int,
                         default=10,
@@ -154,7 +176,9 @@ def generate_tag_board(size: int, rows: int, cols: int, pad: int = 30, family: s
     n_tags_in_family = tag_dict.bytesList.shape[0]
 
     if n_squares > n_tags_in_family:
-        raise ValueError(f"Too many tag requested in {family}. {n_tags_in_family}<{n_squares}")
+        #raise ValueError(f"Too many tag requested in {family}. {n_tags_in_family}<{n_squares}")
+        print(f"Too many tag requested in {family}. {n_tags_in_family}<{n_squares}.")
+        n_squares = n_tags_in_family
 
     tag_id: int = 0
     for i in range(n_squares):
@@ -187,21 +211,10 @@ def generate_tag_board(size: int, rows: int, cols: int, pad: int = 30, family: s
     return board_image
 
 
-def main():
-    # Create an ArgumentParser object
-
-    return None
-
-
-if __name__ == "__main__":
-    # Call the main function with the parsed arguments
-
-    args = parse_args()
-    tag_family: str = 'DICT_APRILTAG_36h11'
-
+def test_aruco_types(cell_size, rows, columns):
     for dk in TAGS_FAMILIES.keys():
         t1 = time.time()
-        chessboard_image = generate_tag_board(size=args.cell_size, rows=args.rows, cols=args.columns, family=dk)
+        chessboard_image = generate_tag_board(size=cell_size, rows=rows, cols=columns, family=dk)
         t2 = time.time()
         print(dk, 'Process Time: ', t2 - t1)
 
@@ -216,5 +229,35 @@ if __name__ == "__main__":
         board_image[:, :, 2] = chessboard_image  # Blue channel
         corners, ids, _ = cv.aruco.detectMarkers(board_image, tag_dict)
         board_image = cv.aruco.drawDetectedMarkers(board_image, corners, ids)
-        cv.imshow("Board", board_image)
+        cv.imshow(f"Board {dk}", board_image)
         cv.waitKey(0)
+        cv.destroyWindow(f"Board {dk}")
+
+
+def main():
+    # Create an ArgumentParser object
+
+    return None
+
+
+if __name__ == "__main__":
+    # Call the main function with the parsed arguments
+
+    args = parse_args()
+    config = BoardConfig(args.board_type,
+                         args.tag_type,
+                         args.columns,
+                         args.rows,
+                         args.cell_size,
+                         args.padding)
+
+    board = None
+    if config.board_type == "Chess":
+        board = generate_chess_board(size=config.cell_size, rows=config.rows, cols=config.columns, pad=config.padding)
+
+    elif config.board_type == "Aruco":
+        board = generate_chess_board(size=config.cell_size, rows=config.rows, cols=config.columns, family=config.tag_type)
+
+    cv.imshow(f"Board", board)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
